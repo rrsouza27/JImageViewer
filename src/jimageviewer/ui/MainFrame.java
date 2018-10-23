@@ -5,17 +5,52 @@
  */
 package jimageviewer.ui;
 
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import jimageviewer.managers.ImageManager;
+
 /**
  *
  * @author rafael
  */
 public class MainFrame extends javax.swing.JFrame {
+    private ScaledImage currentImage;
+    private ImageManager manager;
 
     /**
      * Creates new form MainFrame
      */
     public MainFrame() {
         initComponents();
+
+        Logger logger = Logger.getLogger(MainFrame.class.getName());
+        logger.log(Level.INFO, "CAASO!");
+        this.jLabel1.setHorizontalAlignment(JLabel.CENTER);
+        try {
+            Image image = Toolkit.getDefaultToolkit().getImage("/home/rafael/Desktop/test.gif");
+            //logger.log(Level.INFO, "CAASO: probe: {0}", Files.probeContentType(Paths.get("/home/rafael/Downloads/Q30uoCP")));
+            this.currentImage = new ScaledImage(image);
+            //this.currentImage = new ScaledImage(Toolkit.getDefaultToolkit().getImage("/home/rafael/Desktop/test.gif2"));
+        } catch (Exception ex) {
+            logger.log(Level.INFO, "CAASO exception: "+ex);
+        }
+
+        this.manager = new ImageManager();
+        manager.setPath("/home/rafael/Downloads");
+        manager.load();
+        //this.currentImage = new ScaledImage(ImageIO.read("/home/rafael/Desktop/test.gif"));
     }
 
     /**
@@ -27,21 +62,76 @@ public class MainFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        jLabel1 = new javax.swing.JLabel();
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(600, 400));
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                formComponentResized(evt);
+            }
+        });
+        addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                formKeyPressed(evt);
+            }
+        });
+        getContentPane().setLayout(new javax.swing.BoxLayout(getContentPane(), javax.swing.BoxLayout.LINE_AXIS));
+
+        jLabel1.setBackground(new java.awt.Color(0, 0, 0));
+        jLabel1.setMaximumSize(new java.awt.Dimension(2147483647, 2147483647));
+        jLabel1.setOpaque(true);
+        getContentPane().add(jLabel1);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void formComponentResized(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentResized
+        ImageIcon icon = new ImageIcon(this.currentImage.getScaledImage(this.getWidth(), this.getHeight(), true));
+        this.jLabel1.setIcon(icon);
+    }//GEN-LAST:event_formComponentResized
+
+    private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
+        if(evt.getKeyCode() == KeyEvent.VK_LEFT) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                   String imagePath = manager.getPrevious();
+                    System.out.println("CAASO: imagePath: "+imagePath);
+                    Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
+                    MediaTracker tracker = new MediaTracker(MainFrame.this);
+                    tracker.addImage(image, 0);
+                    try {
+                        tracker.waitForAll();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                    if(currentImage != null) {
+                        currentImage.flush();
+                    }
+                    currentImage = new ScaledImage(image);
+                    image.flush();
+                    ImageIcon icon = new ImageIcon(currentImage.getScaledImage(getWidth(), getHeight(), true));
+
+                    jLabel1.setIcon(icon);
+                }
+            });
+
+        } else if (evt.getKeyCode() == KeyEvent.VK_RIGHT) {
+            String imagePath = this.manager.getNext();
+            System.out.println("CAASO: imagePath: "+imagePath);
+            Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
+            if(currentImage != null) {
+                 currentImage.flush();
+             }
+            this.currentImage = new ScaledImage(image);
+            image.flush();
+            ImageIcon icon = new ImageIcon(this.currentImage.getScaledImage(this.getWidth(), this.getHeight(), true));
+            this.jLabel1.setIcon(icon);
+            this.pack();
+        }
+    }//GEN-LAST:event_formKeyPressed
 
     /**
      * @param args the command line arguments
@@ -50,7 +140,7 @@ public class MainFrame extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -72,6 +162,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 new MainFrame().setVisible(true);
             }
@@ -79,5 +170,6 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
 }
